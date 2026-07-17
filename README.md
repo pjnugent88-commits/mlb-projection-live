@@ -12,9 +12,41 @@ Downloads and audit files:
 - `/projections.csv` — current game projections
 - `/metrics.json` — game-model chronological holdout metrics
 - `/metadata.json` — game-model sources and freshness
-- `/player_props.csv` — current pitcher and batter prop projections
+- `/player_props.csv` — every current pitcher and batter prop projection
 - `/prop_metrics.json` — market-by-market chronological holdout metrics
-- `/prop_metadata.json` — prop sources, lineup status, and odds status
+- `/prop_metadata.json` — prop sources, lineup status, odds status, and display policy
+
+## Categorized player props
+
+The mobile props page separates and filters:
+
+- Best sportsbook values
+- All pitcher props
+- Pitcher strikeouts
+- Pitcher outs recorded
+- Pitcher hits allowed
+- All batter props
+- Batter hits
+- Batter total bases
+- Batter home runs
+
+It also supports player/team search. All qualifying VALUE rows are displayed, plus a balanced top set from every market so one category cannot crowd out the others. The CSV contains every projection.
+
+## Sportsbook prices and expected value
+
+The statistical models work without a paid API key and publish projections, standard reference lines, over/under probabilities, and fair American odds.
+
+To activate actual sportsbook player-prop prices, no-vig probabilities, model edge, expected value, and best available books:
+
+1. Obtain a The Odds API key on a plan that includes MLB event-level player props.
+2. Open repository **Settings → Secrets and variables → Actions**.
+3. Create a repository secret named exactly `THE_ODDS_API_KEY`.
+4. Paste the key as the secret value and save it.
+5. Run **Actions → Live MLB projections and player props → Run workflow**.
+
+Direct secret page: **https://github.com/pjnugent88-commits/mlb-projection-live/settings/secrets/actions/new**
+
+The key remains inside GitHub Actions and is never published to GitHub Pages or the CSV files.
 
 ## What runs automatically
 
@@ -24,24 +56,10 @@ The workflow runs at approximately 7 AM, noon, and 4 PM Eastern during daylight-
 2. Pulls Baseball Savant Statcast pitches through `pybaseball`.
 3. Builds leakage-safe rolling offense, starter, bullpen, park, Elo, form, rest, pitcher-prop, and batter-prop features.
 4. Retrieves archived 24-hour-ahead forecasts for historical training and current Open-Meteo forecasts.
-5. Trains chronological game and player-level ensembles.
+5. Trains chronological game and six-market player-level ensembles.
 6. Checks MLB boxscores for confirmed batting orders.
-7. Publishes game probabilities, projected scores, fair odds, prop projections, fair prop lines, input coverage, and downloadable files to GitHub Pages.
-
-## Stage 3 player props
-
-The live prop page models:
-
-- Pitcher strikeouts
-- Pitcher outs recorded
-- Pitcher hits allowed
-- Batter hits
-- Batter total bases
-- Batter home runs
-
-Pitcher props appear when MLB lists a probable starter. Batter props appear only after MLB publishes the batting order for that game. This avoids presenting a bench player or scratched hitter as a confirmed prop candidate.
-
-Without sportsbook prices, the system publishes model projections, standard reference lines, over/under probabilities, and fair American odds. With a qualifying The Odds API plan and the `THE_ODDS_API_KEY` repository secret, it requests event-level player props, removes two-way vig, and calculates edge and expected value.
+7. Optionally retrieves event-level sportsbook player-prop prices.
+8. Publishes categorized mobile dashboards and downloadable audit files to GitHub Pages.
 
 ## Production guarantees
 
@@ -52,16 +70,10 @@ Without sportsbook prices, the system publishes model projections, standard refe
 - Player rolling form is shifted so the current game's results never enter its own features.
 - Historical park and weather joins are pregame-only.
 - Train/test splits are chronological rather than random.
-- Model leans are not described as market value unless sportsbook prices are available.
-
-## Optional sportsbook layer
-
-1. Obtain an API key from The Odds API on a plan that includes MLB player props.
-2. Open repository **Settings → Secrets and variables → Actions**.
-3. Create a repository secret named `THE_ODDS_API_KEY`.
-4. Run the workflow again.
-
-Player props are queried one event at a time. API usage therefore depends on the number of games, markets, and bookmaker regions requested.
+- Batter props appear only for batting orders returned by MLB.
+- Started and completed games are excluded from the live prop board.
+- VALUE labels require both positive model edge and positive expected value against connected sportsbook prices.
+- Model-only projections are labeled as leans or watches, not market value.
 
 ## Manual run
 
