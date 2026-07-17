@@ -1,0 +1,22 @@
+model:
+  rolling_window_games: 18
+  venue_window_games: 80
+  elo_k: 20.0
+  elo_home_advantage: 35.0
+  minimum_training_games: 700
+  test_fraction: 0.20
+  random_state: 42
+  ensemble_tree_weight: 0.55
+
+live_data:
+  history_days: 190
+  statcast_lookback_days: 42
+  statcast_chunk_days: 7
+
+betting:
+  minimum_edge: 0.025
+  minimum_ev: 0.02
+
+mobile_dashboard:
+  title: Daily MLB Projection Board
+  top_signals: 20
