@@ -101,15 +101,19 @@ def attach_advanced_features(
     if starter_snapshots is not None and not starter_snapshots.empty:
         ss = starter_snapshots.copy()
         ss["pitcher_id"] = pd.to_numeric(ss["pitcher_id"], errors="coerce")
+        ss = ss[ss["pitcher_id"].notna()].copy()
+        if not ss.empty:
+            ss["pitcher_id"] = ss["pitcher_id"].astype("int64")
         for side in ("home", "away"):
             id_col = f"{side}_probable_pitcher_id"
-            if id_col not in base:
+            if id_col not in base or ss.empty:
                 continue
             left = base[["game_pk", "game_datetime", id_col]].rename(columns={id_col: "pitcher_id"})
             left["pitcher_id"] = pd.to_numeric(left["pitcher_id"], errors="coerce")
-            valid = left[left["pitcher_id"].notna()]
+            valid = left[left["pitcher_id"].notna()].copy()
             if valid.empty:
                 continue
+            valid["pitcher_id"] = valid["pitcher_id"].astype("int64")
             joined = _latest_strictly_before(valid, ss, "pitcher_id", "pitcher_id")
             keep = ["game_pk"] + [c for c in starter_metrics if c in joined]
             renamed = joined[keep].rename(columns={c: f"{side}_{c}" for c in keep if c != "game_pk"})
