@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import warnings
 from typing import Any
 
 import pandas as pd
@@ -48,22 +49,50 @@ def _normalize_team_name(name: str) -> str:
     return replacements.get(name, name)
 
 
+def _empty_moneyline_frame() -> pd.DataFrame:
+    return pd.DataFrame(columns=[
+        "away_team", "home_team", "best_away_odds", "best_home_odds", "away_book", "home_book",
+    ])
+
+
 def fetch_moneyline_odds(api_key: str | None = None, regions: str = "us") -> pd.DataFrame:
     api_key = api_key or os.getenv("THE_ODDS_API_KEY")
-    columns = ["away_team", "home_team", "best_away_odds", "best_home_odds", "away_book", "home_book"]
     if not api_key:
-        return pd.DataFrame(columns=columns)
+        return _empty_moneyline_frame()
 
-    response = requests.get(
-        ODDS_API_URL,
-        params={
-            "apiKey": api_key, "regions": regions, "markets": "h2h",
-            "oddsFormat": "american", "dateFormat": "iso",
-        },
-        timeout=30,
-    )
-    response.raise_for_status()
-    events: list[dict[str, Any]] = response.json()
+    normalized_key = str(api_key).strip().lower()
+    placeholder_values = {
+        "your the odds api key", "your_api_key", "your-api-key", "api key", "apikey",
+    }
+    if normalized_key in placeholder_values:
+        warnings.warn(
+            "THE_ODDS_API_KEY contains placeholder text; continuing without sportsbook prices.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return _empty_moneyline_frame()
+
+    try:
+        response = requests.get(
+            ODDS_API_URL,
+            params={
+                "apiKey": api_key, "regions": regions, "markets": "h2h",
+                "oddsFormat": "american", "dateFormat": "iso",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        events: list[dict[str, Any]] = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        detail = f"HTTP {status}" if status is not None else exc.__class__.__name__
+        warnings.warn(
+            f"Moneyline odds unavailable ({detail}); continuing without sportsbook prices.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return _empty_moneyline_frame()
+
     rows: list[dict[str, Any]] = []
     for event in events:
         away_name, home_name = event["away_team"], event["home_team"]
@@ -83,4 +112,4 @@ def fetch_moneyline_odds(api_key: str | None = None, regions: str = "us") -> pd.
             "best_home_odds": best[home_name][0] if best[home_name][1] is not None else math.nan,
             "away_book": best[away_name][1], "home_book": best[home_name][1],
         })
-    return pd.DataFrame(rows, columns=columns)
+    return pd.DataFrame(rows, columns=_empty_moneyline_frame().columns)
