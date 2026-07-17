@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mlb_projection.data_sources import COMPLETED_STATUSES, MODEL_GAME_TYPES, fetch_schedule
+from mlb_projection.data_sources import MODEL_GAME_TYPES, fetch_schedule
 from mlb_projection.lineups import fetch_game_lineups
 from mlb_projection.live_enrichment import fetch_open_meteo_game_weather
 from mlb_projection.player_props import (
@@ -23,6 +23,8 @@ from mlb_projection.player_props import (
 )
 from mlb_projection.player_props_dashboard import render_player_props_dashboard
 from mlb_projection.prop_odds import attach_game_pks, fetch_player_prop_odds, normalize_player_name
+
+PREGAME_STATUSES = {"Scheduled", "Pre-Game", "Warmup", "Delayed Start"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -99,7 +101,7 @@ def main() -> None:
 
     slate = fetch_schedule(args.date)
     if not slate.empty:
-        slate = slate[slate["game_type"].isin(MODEL_GAME_TYPES) & ~slate["status"].isin(COMPLETED_STATUSES)].copy()
+        slate = slate[slate["game_type"].isin(MODEL_GAME_TYPES) & slate["status"].isin(PREGAME_STATUSES)].copy()
     slate = _attach_live_park_factors(slate, team_snapshots)
     lineups = fetch_game_lineups(slate)
     live_weather = fetch_open_meteo_game_weather(slate, venues) if not slate.empty else pd.DataFrame()
@@ -144,6 +146,7 @@ def main() -> None:
         },
         "odds_status": odds_metadata,
         "lineup_policy": "Batter props are published only for batting orders returned by MLB Stats API.",
+        "slate_policy": "Only pregame MLB statuses are eligible; started and completed games are excluded.",
     }
     props.to_csv(outputs / "player_props.csv", index=False)
     (outputs / "prop_metrics.json").write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
