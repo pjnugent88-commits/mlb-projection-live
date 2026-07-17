@@ -17,6 +17,17 @@ betting:
   minimum_edge: 0.025
   minimum_ev: 0.02
 
+player_props:
+  title: MLB Player Props
+  rolling_games: 15
+  test_fraction: 0.20
+  ensemble_tree_weight: 0.55
+  minimum_pitcher_rows: 300
+  minimum_batter_rows: 1200
+  minimum_edge: 0.025
+  minimum_ev: 0.02
+  top_props: 80
+
 mobile_dashboard:
   title: Daily MLB Projection Board
   top_signals: 20
