@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from mlb_projection.player_props_dashboard import render_player_props_dashboard
-from scripts.run_player_props import _select_dashboard_props
+from mlb_projection.prop_dashboard_selection import select_dashboard_props
 
 
 def _props() -> pd.DataFrame:
@@ -51,13 +51,13 @@ def _props() -> pd.DataFrame:
 
 
 def test_balanced_dashboard_selection_keeps_every_market_and_values():
-    selected = _select_dashboard_props(_props(), per_market=1)
+    selected = select_dashboard_props(_props(), per_market=1)
     assert selected["market_key"].nunique() == 6
     assert selected["signal"].str.contains("VALUE").sum() == 6
 
 
 def test_dashboard_renders_categories_filters_and_market_details(tmp_path: Path):
-    props = _select_dashboard_props(_props(), per_market=1)
+    props = select_dashboard_props(_props(), per_market=1)
     metrics = {
         "projection_date": "2026-07-17",
         "generated_at_utc": "2026-07-17T19:00:00Z",
