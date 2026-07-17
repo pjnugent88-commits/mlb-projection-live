@@ -70,6 +70,16 @@ def _attach_live_park_factors(slate: pd.DataFrame, team_snapshots: pd.DataFrame)
     return slate.merge(latest.rename(columns={"team": "home_team"}), on="home_team", how="left")
 
 
+def _select_dashboard_props(props: pd.DataFrame, per_market: int) -> pd.DataFrame:
+    if props.empty:
+        return props.copy()
+    per_market = max(int(per_market), 1)
+    selected = set(props.index[props["signal"].astype(str).str.contains("VALUE")].tolist())
+    for _, market_rows in props.groupby("market_key", sort=False):
+        selected.update(market_rows.head(per_market).index.tolist())
+    return props.loc[sorted(selected)].copy().reset_index(drop=True)
+
+
 def main() -> None:
     args = parse_args()
     load_dotenv(ROOT / ".env")
@@ -127,11 +137,13 @@ def main() -> None:
         minimum_edge=float(prop_config.get("minimum_edge", config.get("betting", {}).get("minimum_edge", 0.025))),
         minimum_ev=float(prop_config.get("minimum_ev", config.get("betting", {}).get("minimum_ev", 0.02))),
     )
+    dashboard_props = _select_dashboard_props(props, int(prop_config.get("top_props_per_market", 20)))
     generated = pd.Timestamp.now(tz="UTC").isoformat()
     metrics = {
         **bundle.metrics, "projection_date": args.date, "generated_at_utc": generated,
         "market_odds_available": bool(odds_metadata.get("available", False)),
-        "projected_props": int(len(props)), "pitcher_props": int(props["player_type"].eq("pitcher").sum()) if not props.empty else 0,
+        "projected_props": int(len(props)), "dashboard_props": int(len(dashboard_props)),
+        "pitcher_props": int(props["player_type"].eq("pitcher").sum()) if not props.empty else 0,
         "batter_props": int(props["player_type"].eq("batter").sum()) if not props.empty else 0,
         "confirmed_lineup_games": int(lineups[lineups["lineup_status"].eq("confirmed")]["game_pk"].nunique()) if not lineups.empty else 0,
     }
@@ -147,11 +159,12 @@ def main() -> None:
         "odds_status": odds_metadata,
         "lineup_policy": "Batter props are published only for batting orders returned by MLB Stats API.",
         "slate_policy": "Only pregame MLB statuses are eligible; started and completed games are excluded.",
+        "dashboard_policy": "All VALUE rows plus a balanced top set from every supported market are displayed; the CSV contains every projection.",
     }
     props.to_csv(outputs / "player_props.csv", index=False)
     (outputs / "prop_metrics.json").write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
     (outputs / "prop_metadata.json").write_text(json.dumps(metadata, indent=2, default=str), encoding="utf-8")
-    render_player_props_dashboard(props.head(int(prop_config.get("top_props", 80))), metrics, outputs / "props.html", prop_config.get("title", "MLB Player Props"))
+    render_player_props_dashboard(dashboard_props, metrics, outputs / "props.html", prop_config.get("title", "MLB Player Props"))
     print(f"Published {len(props)} player props: {metrics['pitcher_props']} pitcher and {metrics['batter_props']} batter rows.")
 
 
