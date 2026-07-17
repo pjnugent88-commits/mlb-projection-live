@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           python -m compileall -q src scripts
-          pytest -q
+          PYTHONPATH=src pytest -q
           python - <<'PY'
           import sys
           import pandas as pd
