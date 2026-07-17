@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.venv/
+.env
+models/*.joblib
+outputs/*
+!outputs/.gitkeep
+data/processed/
+data/cache/*.csv
+data/cache/*.pkl
+data/cache/*.pickle
