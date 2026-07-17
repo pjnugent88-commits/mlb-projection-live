@@ -22,6 +22,7 @@ from mlb_projection.player_props import (
     project_player_props, save_player_prop_bundle, train_player_prop_models,
 )
 from mlb_projection.player_props_dashboard import render_player_props_dashboard
+from mlb_projection.prop_dashboard_selection import select_dashboard_props
 from mlb_projection.prop_odds import attach_game_pks, fetch_player_prop_odds, normalize_player_name
 
 PREGAME_STATUSES = {"Scheduled", "Pre-Game", "Warmup", "Delayed Start"}
@@ -68,16 +69,6 @@ def _attach_live_park_factors(slate: pd.DataFrame, team_snapshots: pd.DataFrame)
         return slate
     latest = team_snapshots.sort_values("snapshot_time").groupby("team", as_index=False).last()[["team", "park_hr_factor"]]
     return slate.merge(latest.rename(columns={"team": "home_team"}), on="home_team", how="left")
-
-
-def _select_dashboard_props(props: pd.DataFrame, per_market: int) -> pd.DataFrame:
-    if props.empty:
-        return props.copy()
-    per_market = max(int(per_market), 1)
-    selected = set(props.index[props["signal"].astype(str).str.contains("VALUE")].tolist())
-    for _, market_rows in props.groupby("market_key", sort=False):
-        selected.update(market_rows.head(per_market).index.tolist())
-    return props.loc[sorted(selected)].copy().reset_index(drop=True)
 
 
 def main() -> None:
@@ -137,7 +128,7 @@ def main() -> None:
         minimum_edge=float(prop_config.get("minimum_edge", config.get("betting", {}).get("minimum_edge", 0.025))),
         minimum_ev=float(prop_config.get("minimum_ev", config.get("betting", {}).get("minimum_ev", 0.02))),
     )
-    dashboard_props = _select_dashboard_props(props, int(prop_config.get("top_props_per_market", 20)))
+    dashboard_props = select_dashboard_props(props, int(prop_config.get("top_props_per_market", 20)))
     generated = pd.Timestamp.now(tz="UTC").isoformat()
     metrics = {
         **bundle.metrics, "projection_date": args.date, "generated_at_utc": generated,
