@@ -1,0 +1,108 @@
+name: Live MLB projections
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      projection_date:
+        description: Projection date in YYYY-MM-DD; blank uses today in New York
+        required: false
+        type: string
+  schedule:
+    - cron: "0 11 * * *"
+    - cron: "0 16 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: mlb-live-pages
+  cancel-in-progress: true
+
+jobs:
+  project:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Restore live-data cache
+        uses: actions/cache@v4
+        with:
+          path: data/cache
+          key: mlb-live-v2-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            mlb-live-v2-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate source
+        shell: bash
+        run: |
+          python -m compileall -q src scripts
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, 'src')
+          from mlb_projection.odds import probability_to_american, expected_value_per_unit
+          assert probability_to_american(0.60) == -150
+          assert expected_value_per_unit(0.60, -110) > 0
+          PY
+
+      - name: Resolve projection date
+        id: projection-date
+        shell: bash
+        run: |
+          REQUESTED="${{ inputs.projection_date }}"
+          if [ -n "$REQUESTED" ]; then
+            TARGET_DATE="$REQUESTED"
+          else
+            TARGET_DATE=$(TZ=America/New_York date +%F)
+          fi
+          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Pull real MLB, Statcast, and historical forecast data
+        run: python scripts/prepare_live_stage2.py --date "${{ steps.projection-date.outputs.date }}"
+
+      - name: Train and project current slate
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+          ODDS_REGION: us
+        run: python scripts/run_stage2.py --date "${{ steps.projection-date.outputs.date }}"
+
+      - name: Assemble Pages site
+        shell: bash
+        run: |
+          mkdir -p site
+          cp outputs/index.html site/index.html
+          cp outputs/projections.csv site/projections.csv
+          cp outputs/metrics.json site/metrics.json
+          cp outputs/metadata.json site/metadata.json
+          touch site/.nojekyll
+
+      - name: Upload projection files
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-projections-${{ steps.projection-date.outputs.date }}
+          path: outputs/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publish dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4
