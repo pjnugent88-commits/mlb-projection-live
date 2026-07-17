@@ -1,0 +1,20 @@
+name: Diagnose failed MLB run
+
+on:
+  push:
+    paths:
+      - .github/workflows/diagnose.yml
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print failed step log tail
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view 29591345959 --repo "${{ github.repository }}" --log-failed | tail -n 180
