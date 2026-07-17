@@ -1,6 +1,8 @@
 name: Live MLB projections
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       projection_date:
@@ -36,28 +38,8 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Restore live-data cache
-        uses: actions/cache@v4
-        with:
-          path: data/cache
-          key: mlb-live-v2-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            mlb-live-v2-${{ runner.os }}-
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Validate source
-        shell: bash
-        run: |
-          python -m compileall -q src scripts
-          python - <<'PY'
-          import sys
-          sys.path.insert(0, 'src')
-          from mlb_projection.odds import probability_to_american, expected_value_per_unit
-          assert probability_to_american(0.60) == -150
-          assert expected_value_per_unit(0.60, -110) > 0
-          PY
 
       - name: Resolve projection date
         id: projection-date
@@ -71,14 +53,62 @@ jobs:
           fi
           echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
 
+      - name: Restore live-data cache
+        id: live-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache
+          key: mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-
+            mlb-live-v3-${{ runner.os }}-
+
+      - name: Validate source and starter-ID normalization
+        shell: bash
+        run: |
+          python -m compileall -q src scripts
+          python - <<'PY'
+          import sys
+          import pandas as pd
+          sys.path.insert(0, 'src')
+          from mlb_projection.advanced_features import attach_advanced_features
+          from mlb_projection.odds import probability_to_american, expected_value_per_unit
+          assert probability_to_american(0.60) == -150
+          assert expected_value_per_unit(0.60, -110) > 0
+          games = pd.DataFrame({
+              'game_pk':[1], 'game_datetime':['2026-07-17T23:00:00Z'],
+              'home_team':['NYY'], 'away_team':['BOS'],
+              'home_probable_pitcher_id':[123.0], 'away_probable_pitcher_id':[456.0],
+          })
+          starters = pd.DataFrame({
+              'pitcher_id':pd.Series([123,456], dtype='int64'),
+              'snapshot_time':['2026-07-16T00:00:00Z','2026-07-16T00:00:00Z'],
+              'starter_xwoba_allowed':[.30,.32],
+              'starter_k_minus_bb':[.18,.12],
+              'starter_projected_innings':[5.8,5.2],
+          })
+          result = attach_advanced_features(games, starter_snapshots=starters)
+          assert result['starter_k_minus_bb_diff'].notna().all()
+          PY
+
       - name: Pull real MLB, Statcast, and historical forecast data
         run: python scripts/prepare_live_stage2.py --date "${{ steps.projection-date.outputs.date }}"
+
+      - name: Save prepared live-data cache
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache
+          key: mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-${{ github.run_id }}
 
       - name: Train and project current slate
         env:
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_REGION: us
-        run: python scripts/run_stage2.py --date "${{ steps.projection-date.outputs.date }}"
+        shell: bash
+        run: |
+          mkdir -p outputs
+          set -o pipefail
+          python scripts/run_stage2.py --date "${{ steps.projection-date.outputs.date }}" 2>&1 | tee outputs/run.log
 
       - name: Assemble Pages site
         shell: bash
@@ -90,11 +120,13 @@ jobs:
           cp outputs/metadata.json site/metadata.json
           touch site/.nojekyll
 
-      - name: Upload projection files
+      - name: Upload projection files and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mlb-projections-${{ steps.projection-date.outputs.date }}
           path: outputs/
+          if-no-files-found: warn
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
