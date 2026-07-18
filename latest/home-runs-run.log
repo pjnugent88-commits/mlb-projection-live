@@ -1,18 +1,3 @@
 /home/runner/work/mlb-projection-live/mlb-projection-live/src/mlb_projection/home_run_bvp.py:138: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
   combined = pd.concat([valid, invalid], ignore_index=True, sort=False)
-Traceback (most recent call last):
-  File "/home/runner/work/mlb-projection-live/mlb-projection-live/scripts/run_home_runs.py", line 183, in <module>
-    main()
-  File "/home/runner/work/mlb-projection-live/mlb-projection-live/scripts/run_home_runs.py", line 124, in main
-    live = build_live(
-           ^^^^^^^^^^^
-  File "/home/runner/work/mlb-projection-live/mlb-projection-live/src/mlb_projection/home_run_features.py", line 187, in build_live
-    r.update(_live_batter(batter_history,bid,long_window,recent_window));r.update(_live_pitcher(pitcher_history,pid,pitcher_window));r.update(_live_bvp(pair_history,bid,pid));r["same_hand"]=int(r.get("batter_hand") in ["L","R"] and r.get("opposing_pitcher_hand") in ["L","R"] and r.get("batter_hand")==r.get("opposing_pitcher_hand"));r.update(ctx.loc[gpk].to_dict());rows.append(r)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/mlb-projection-live/mlb-projection-live/src/mlb_projection/home_run_features.py", line 154, in _live_batter
-    out=f(long,"long");out.update(f(recent,"recent"));out["batter_hand"]=h.batter_hand.dropna().iloc[-1] if h.batter_hand.notna().any() else None;return out
-        ^^^^^^^^^^^^^^
-  File "/home/runner/work/mlb-projection-live/mlb-projection-live/src/mlb_projection/home_run_features.py", line 153, in f
-    return {f"batter_hr_pa_{s}":float(z.home_runs.sum()/pa),f"batter_barrel_pa_{s}":float(z.barrels.sum()/pa),f"batter_barrel_bbe_{s}":float(z.barrels.sum()/bbe),f"batter_hard_air_pa_{s}":float(z.hard_air.sum()/pa),f"batter_sweet_pa_{s}":float(z.sweet.sum()/pa),f"batter_k_rate_{s}":float(z.strikeouts.sum()/pa),f"batter_bb_rate_{s}":float(z.walks.sum()/pa),f"batter_xwoba_{s}":float(z.xwoba.mean()),f"batter_ev90_{s}":float(z.ev90.mean())}
-                                                                                                                                                                                                                                                                                                                                                                                          ^^^^^^^^^^^^^^^^^^^^^
-TypeError: float() argument must be a string or a real number, not 'NAType'
+Published 126 standalone home-run probabilities with 116 matched sportsbook prices.

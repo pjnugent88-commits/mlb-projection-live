@@ -1,0 +1,21 @@
+{
+  "production_mode": true,
+  "synthetic_data_used": false,
+  "projection_date": "2026-07-18",
+  "generated_at_utc": "2026-07-18T19:14:22.635057+00:00",
+  "model_scope": "Probability a confirmed starting batter hits at least one home run in the game.",
+  "data_sources": {
+    "schedule_and_lineups": "MLB Stats API schedule and boxscore",
+    "pitch_tracking": "Baseball Savant Statcast via pybaseball",
+    "weather": "Open-Meteo",
+    "market_odds": "The Odds API batter_home_runs"
+  },
+  "bvp_policy": "Only actual pitch-level plate appearances against the listed pitcher are included. PA, HR and barrels are shifted to pregame history and Bayesian-shrunk toward league priors with 40 prior PA.",
+  "lineup_policy": "Only confirmed MLB batting orders with a listed probable opposing starter are published.",
+  "odds_status": {
+    "available": true,
+    "provider": "The Odds API",
+    "reason": null,
+    "events_with_props": 15
+  }
+}
