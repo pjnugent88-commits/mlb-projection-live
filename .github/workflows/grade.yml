@@ -20,7 +20,7 @@ on:
     - cron: "0 14 * * *"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -50,3 +50,20 @@ jobs:
           name: mlb-grading-report
           path: grading_output/
           retention-days: 90
+      - name: Publish grading snapshot
+        shell: bash
+        run: |
+          report_date=$(python -c "import json; print(json.load(open('grading_output/grading_summary.json'))['date'])")
+          rm -rf /tmp/grading-publish
+          mkdir -p /tmp/grading-publish
+          cp grading_output/grading_summary.json grading_output/grading_report.md grading_output/graded_games.csv grading_output/graded_player_props.csv grading_output/official_player_actuals.csv /tmp/grading-publish/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan grading-reports
+          git rm -rf . || true
+          mkdir -p "reports/$report_date" reports/latest
+          cp /tmp/grading-publish/* "reports/$report_date/"
+          cp /tmp/grading-publish/* reports/latest/
+          git add reports
+          git commit -m "Grade MLB projections $report_date"
+          git push --force origin grading-reports
