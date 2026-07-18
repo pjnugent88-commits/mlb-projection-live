@@ -28,6 +28,20 @@ player_props:
   minimum_ev: 0.02
   top_props_per_market: 20
 
+home_run_model:
+  title: MLB Home Run Probability
+  long_window_games: 60
+  recent_window_games: 15
+  pitcher_window_starts: 15
+  tree_weight: 0.35
+  calibration_fraction: 0.15
+  test_fraction: 0.15
+  minimum_rows: 4000
+  minimum_edge: 0.04
+  minimum_ev: 0.04
+  watch_probability: 0.16
+  dashboard_rows: 120
+
 mobile_dashboard:
   title: Daily MLB Projection Board
   top_signals: 20
