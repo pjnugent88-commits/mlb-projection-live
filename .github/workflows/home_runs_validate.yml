@@ -1,0 +1,99 @@
+name: Validate standalone home run model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/home_runs_validate.yml
+      - scripts/run_home_runs.py
+      - src/mlb_projection/home_run_*.py
+      - tests/test_home_run_model.py
+      - config.yaml
+  workflow_dispatch:
+    inputs:
+      projection_date:
+        description: Projection date in YYYY-MM-DD; blank uses today in New York
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: standalone-home-run-validation
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Resolve date
+        id: projection-date
+        shell: bash
+        run: |
+          REQUESTED="${{ inputs.projection_date }}"
+          if [ -n "$REQUESTED" ]; then
+            TARGET_DATE="$REQUESTED"
+          else
+            TARGET_DATE=$(TZ=America/New_York date +%F)
+          fi
+          echo "date=$TARGET_DATE" >> "$GITHUB_OUTPUT"
+      - name: Restore live cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache
+          key: mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-
+            mlb-live-v3-${{ runner.os }}-
+      - name: Validate HR code
+        run: |
+          python -m compileall -q src scripts
+          PYTHONPATH=src pytest -q tests/test_home_run_model.py
+      - name: Prepare real inputs
+        run: python scripts/prepare_live_stage2.py --date "${{ steps.projection-date.outputs.date }}"
+      - name: Run standalone HR model
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+          ODDS_REGION: us
+        shell: bash
+        run: |
+          mkdir -p outputs
+          set -o pipefail
+          python scripts/run_home_runs.py --date "${{ steps.projection-date.outputs.date }}" 2>&1 | tee outputs/home-runs-run.log
+      - name: Publish validation audit
+        if: always()
+        shell: bash
+        run: |
+          TARGET_DATE="${{ steps.projection-date.outputs.date }}"
+          git fetch origin hr-validation
+          git worktree add -B hr-validation /tmp/hr-validation origin/hr-validation
+          mkdir -p /tmp/hr-validation/latest
+          printf '{"date":"%s","run_id":"%s","commit":"%s","metrics_present":%s}\n' \
+            "$TARGET_DATE" "${{ github.run_id }}" "${{ github.sha }}" \
+            "$([ -f outputs/home_run_metrics.json ] && echo true || echo false)" \
+            > /tmp/hr-validation/latest/status.json
+          for file in home_run_metrics.json home_run_metadata.json home_run_probabilities.csv home-runs-run.log; do
+            if [ -f "outputs/$file" ]; then cp "outputs/$file" /tmp/hr-validation/latest/; fi
+          done
+          cd /tmp/hr-validation
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add latest
+          git commit -m "Validate standalone HR model for $TARGET_DATE" || exit 0
+          git push origin HEAD:hr-validation
+      - name: Upload HR validation files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-home-run-validation
+          path: outputs/
+          if-no-files-found: warn
