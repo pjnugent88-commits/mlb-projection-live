@@ -1,4 +1,4 @@
-name: Live MLB projections and player props
+name: Live MLB projections, player props, and home runs
 
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
             mlb-live-v3-${{ runner.os }}-${{ steps.projection-date.outputs.date }}-
             mlb-live-v3-${{ runner.os }}-
 
-      - name: Validate source and prop utilities
+      - name: Validate source, prop, and HR utilities
         shell: bash
         run: |
           python -m compileall -q src scripts
@@ -74,6 +74,7 @@ jobs:
           import pandas as pd
           sys.path.insert(0, 'src')
           from mlb_projection.advanced_features import attach_advanced_features
+          from mlb_projection.home_run_features import BVP_PRIOR_HR_RATE, _live_bvp
           from mlb_projection.odds import probability_to_american, expected_value_per_unit
           from mlb_projection.player_props import default_prop_line
           from mlb_projection.prop_odds import normalize_player_name
@@ -82,6 +83,8 @@ jobs:
           assert default_prop_line('batter_hits', 1.1) == 0.5
           assert default_prop_line('batter_total_bases', 1.9) == 1.5
           assert normalize_player_name('José Ramírez') == 'jose ramirez'
+          pair = pd.DataFrame(columns=['player_id','opposing_starter_id','pa','home_runs','barrels'])
+          assert abs(_live_bvp(pair,1,2)['bvp_hr_shrunk'] - BVP_PRIOR_HR_RATE) < 1e-12
           games = pd.DataFrame({
               'game_pk':[1], 'game_datetime':['2026-07-17T23:00:00Z'],
               'home_team':['NYY'], 'away_team':['BOS'],
@@ -126,6 +129,15 @@ jobs:
           set -o pipefail
           python scripts/run_player_props.py --date "${{ steps.projection-date.outputs.date }}" 2>&1 | tee outputs/props-run.log
 
+      - name: Train and project standalone home runs
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+          ODDS_REGION: us
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/run_home_runs.py --date "${{ steps.projection-date.outputs.date }}" 2>&1 | tee outputs/home-runs-run.log
+
       - name: Assemble Pages site
         shell: bash
         run: |
@@ -138,6 +150,10 @@ jobs:
           cp outputs/player_props.csv site/player_props.csv
           cp outputs/prop_metrics.json site/prop_metrics.json
           cp outputs/prop_metadata.json site/prop_metadata.json
+          cp outputs/home_runs.html site/home_runs.html
+          cp outputs/home_run_probabilities.csv site/home_run_probabilities.csv
+          cp outputs/home_run_metrics.json site/home_run_metrics.json
+          cp outputs/home_run_metadata.json site/home_run_metadata.json
           touch site/.nojekyll
 
       - name: Upload projection files and diagnostics
