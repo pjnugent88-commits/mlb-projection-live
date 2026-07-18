@@ -15,7 +15,7 @@ on:
     - cron: "0 20 * * *"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -137,6 +137,27 @@ jobs:
         run: |
           set -o pipefail
           python scripts/run_home_runs.py --date "${{ steps.projection-date.outputs.date }}" 2>&1 | tee outputs/home-runs-run.log
+
+      - name: Publish permanent HR audit files
+        shell: bash
+        run: |
+          TARGET_DATE="${{ steps.projection-date.outputs.date }}"
+          git fetch origin hr-reports
+          git worktree add -B hr-reports /tmp/hr-reports origin/hr-reports
+          mkdir -p "/tmp/hr-reports/latest" "/tmp/hr-reports/archive/$TARGET_DATE"
+          cp outputs/home_run_metrics.json /tmp/hr-reports/latest/home_run_metrics.json
+          cp outputs/home_run_metadata.json /tmp/hr-reports/latest/home_run_metadata.json
+          cp outputs/home_run_probabilities.csv /tmp/hr-reports/latest/home_run_probabilities.csv
+          cp outputs/home-runs-run.log /tmp/hr-reports/latest/home-runs-run.log
+          cp outputs/home_run_metrics.json "/tmp/hr-reports/archive/$TARGET_DATE/home_run_metrics.json"
+          cp outputs/home_run_metadata.json "/tmp/hr-reports/archive/$TARGET_DATE/home_run_metadata.json"
+          cp outputs/home_run_probabilities.csv "/tmp/hr-reports/archive/$TARGET_DATE/home_run_probabilities.csv"
+          cd /tmp/hr-reports
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add latest archive
+          git commit -m "Publish HR model audit for $TARGET_DATE" || exit 0
+          git push origin HEAD:hr-reports
 
       - name: Assemble Pages site
         shell: bash
