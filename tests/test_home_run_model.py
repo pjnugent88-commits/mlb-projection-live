@@ -59,3 +59,26 @@ def test_scoring_uses_hr_value_thresholds():
     assert len(scored) == len(frame)
     assert scored["home_run_probability"].between(0, 1).all()
     assert scored["signal"].eq("HR VALUE").all()
+
+
+def test_true_bvp_features_exclude_current_game_and_accumulate_prior_matchups():
+    from mlb_projection.home_run_bvp import attach_true_bvp_features
+
+    training = pd.DataFrame({
+        "game_pk": [10, 20, 30],
+        "game_date": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"], utc=True),
+        "player_id": [1, 1, 1],
+        "opposing_starter_id": [2, 2, 2],
+    })
+    pair = pd.DataFrame({
+        "game_pk": [10, 20, 30],
+        "game_date": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"], utc=True),
+        "player_id": [1, 1, 1],
+        "opposing_starter_id": [2, 2, 2],
+        "pa": [3, 4, 2],
+        "home_runs": [1, 0, 1],
+        "barrels": [1, 1, 0],
+    })
+    result = attach_true_bvp_features(training, pair)
+    assert result["bvp_pa"].tolist() == [0.0, 3.0, 7.0]
+    assert result["bvp_hr"].tolist() == [0.0, 1.0, 1.0]
