@@ -1,0 +1,52 @@
+name: Grade prior MLB projections
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/grade.yml
+      - scripts/grade_day.py
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Projection date in YYYY-MM-DD; blank grades yesterday in New York
+        required: false
+        type: string
+      run_id:
+        description: Optional specific projection workflow run ID
+        required: false
+        type: string
+  schedule:
+    - cron: "0 14 * * *"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install grading dependencies
+        run: python -m pip install pandas numpy requests
+      - name: Grade published projections
+        shell: bash
+        run: |
+          args=(--output-dir grading_output)
+          if [[ -n "${{ inputs.date }}" ]]; then args+=(--date "${{ inputs.date }}"); fi
+          if [[ -n "${{ inputs.run_id }}" ]]; then args+=(--run-id "${{ inputs.run_id }}"); fi
+          python scripts/grade_day.py "${args[@]}"
+      - name: Upload grading report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-grading-report
+          path: grading_output/
+          retention-days: 90
