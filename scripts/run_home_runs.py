@@ -15,9 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from mlb_projection.data_sources import MODEL_GAME_TYPES, fetch_schedule
+from mlb_projection.home_run_bvp import attach_true_bvp_features, true_bvp_history
 from mlb_projection.home_run_dashboard import render_home_run_dashboard
 from mlb_projection.home_run_features import build_live, build_training
-from mlb_projection.home_run_model import save_home_run_model, score_home_runs, train_home_run_model
+from mlb_projection.home_run_model import HR_FEATURES, save_home_run_model, score_home_runs, train_home_run_model
 from mlb_projection.lineups import fetch_game_lineups
 from mlb_projection.live_enrichment import fetch_open_meteo_game_weather
 from mlb_projection.prop_odds import attach_game_pks, fetch_player_prop_odds, normalize_player_name
@@ -96,12 +97,14 @@ def main() -> None:
     venues = pd.read_csv(ROOT / "data" / "reference" / "venues.csv")
     context = _historical_context(history, historical_weather, team_snapshots)
 
-    training, batter_history, pitcher_history, pair_history = build_training(
+    training, batter_history, pitcher_history, _ = build_training(
         pitches, context,
         long_window=int(cfg.get("long_window_games", 60)),
         recent_window=int(cfg.get("recent_window_games", 15)),
         pitcher_window=int(cfg.get("pitcher_window_starts", 15)),
     )
+    pair_history = true_bvp_history(pitches)
+    training = attach_true_bvp_features(training, pair_history)
     model = train_home_run_model(
         training,
         tree_weight=float(cfg.get("tree_weight", 0.35)),
@@ -124,6 +127,9 @@ def main() -> None:
         recent_window=int(cfg.get("recent_window_games", 15)),
         pitcher_window=int(cfg.get("pitcher_window_starts", 15)),
     ) if not slate.empty else pd.DataFrame()
+    for column in HR_FEATURES:
+        if column not in live:
+            live[column] = pd.NA
 
     prop_odds, odds_metadata = fetch_player_prop_odds(
         api_key=os.getenv("THE_ODDS_API_KEY"), regions=os.getenv("ODDS_REGION", "us"), target_date=args.date,
@@ -162,7 +168,7 @@ def main() -> None:
             "weather": "Open-Meteo",
             "market_odds": "The Odds API batter_home_runs" if not hr_odds.empty else "unavailable",
         },
-        "bvp_policy": "Batter-versus-pitcher PA, HR and barrels are shifted to pregame history and Bayesian-shrunk toward league priors with 40 prior PA.",
+        "bvp_policy": "Only actual pitch-level plate appearances against the listed pitcher are included. PA, HR and barrels are shifted to pregame history and Bayesian-shrunk toward league priors with 40 prior PA.",
         "lineup_policy": "Only confirmed MLB batting orders with a listed probable opposing starter are published.",
         "odds_status": odds_metadata,
     }
