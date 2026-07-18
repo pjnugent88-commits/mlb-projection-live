@@ -17,7 +17,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from mlb_projection.data_sources import MODEL_GAME_TYPES, fetch_schedule
 from mlb_projection.home_run_bvp import attach_true_bvp_features, true_bvp_history
 from mlb_projection.home_run_dashboard import render_home_run_dashboard
-from mlb_projection.home_run_features import build_live, build_training
+from mlb_projection.home_run_features import build_training
+from mlb_projection.home_run_live import build_live
 from mlb_projection.home_run_model import HR_FEATURES, save_home_run_model, score_home_runs, train_home_run_model
 from mlb_projection.lineups import fetch_game_lineups
 from mlb_projection.live_enrichment import fetch_open_meteo_game_weather
