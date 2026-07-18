@@ -26,32 +26,20 @@ def true_bvp_history(pitches: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame(
             columns=[
-                "game_pk",
-                "game_date",
-                "player_id",
-                "opposing_starter_id",
-                "pa",
-                "home_runs",
-                "barrels",
+                "game_pk", "game_date", "player_id", "opposing_starter_id",
+                "pa", "home_runs", "barrels",
             ]
         )
-
     history = (
         frame.groupby(
-            ["game_pk", "game_date", "batter", "pitcher"],
-            as_index=False,
+            ["game_pk", "game_date", "batter", "pitcher"], as_index=False
         )
         .agg(
             pa=("pa", "sum"),
             home_runs=("hr", "sum"),
             barrels=("barrel", "sum"),
         )
-        .rename(
-            columns={
-                "batter": "player_id",
-                "pitcher": "opposing_starter_id",
-            }
-        )
+        .rename(columns={"batter": "player_id", "pitcher": "opposing_starter_id"})
     )
     history["pa"] = pd.to_numeric(history["pa"], errors="coerce").fillna(0)
     history = history[history["pa"].gt(0)].copy()
@@ -73,13 +61,10 @@ def attach_true_bvp_features(
     training: pd.DataFrame,
     pair_history: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Attach only information available before each target game.
-
-    Each pair snapshot contains cumulative PA, HR and barrels through the
-    previous matchup. An as-of join preserves older BvP history even when the
-    batter did not face the listed starter in the target game.
-    """
-    output = training.drop(columns=[c for c in BVP_COLUMNS if c in training], errors="ignore").copy()
+    """Attach shifted pitch-level BvP totals available before each game."""
+    output = training.drop(
+        columns=[c for c in BVP_COLUMNS if c in training], errors="ignore"
+    ).copy()
     if output.empty:
         return output
 
@@ -110,23 +95,15 @@ def attach_true_bvp_features(
         pairs["bvp_barrels"] = grouped["barrels"].cumsum() - pairs["barrels"]
         snapshots = pairs[
             [
-                "player_id",
-                "opposing_starter_id",
-                "_event_key",
-                "bvp_pa",
-                "bvp_hr",
-                "bvp_barrels",
+                "player_id", "opposing_starter_id", "_event_key",
+                "bvp_pa", "bvp_hr", "bvp_barrels",
             ]
         ].copy()
     else:
         snapshots = pd.DataFrame(
             columns=[
-                "player_id",
-                "opposing_starter_id",
-                "_event_key",
-                "bvp_pa",
-                "bvp_hr",
-                "bvp_barrels",
+                "player_id", "opposing_starter_id", "_event_key",
+                "bvp_pa", "bvp_hr", "bvp_barrels",
             ]
         )
 
@@ -136,11 +113,12 @@ def attach_true_bvp_features(
     invalid = output.loc[~output.index.isin(valid.index)].copy()
 
     if not valid.empty and not snapshots.empty:
+        # merge_asof requires the temporal key to be globally monotonic.
         valid = valid.sort_values(
-            ["player_id", "opposing_starter_id", "_event_key"]
+            ["_event_key", "player_id", "opposing_starter_id"]
         )
         snapshots = snapshots.sort_values(
-            ["player_id", "opposing_starter_id", "_event_key"]
+            ["_event_key", "player_id", "opposing_starter_id"]
         )
         valid = pd.merge_asof(
             valid,
@@ -159,7 +137,9 @@ def attach_true_bvp_features(
 
     combined = pd.concat([valid, invalid], ignore_index=True, sort=False)
     for column in ["bvp_pa", "bvp_hr", "bvp_barrels"]:
-        combined[column] = pd.to_numeric(combined[column], errors="coerce").fillna(0.0)
+        combined[column] = pd.to_numeric(
+            combined[column], errors="coerce"
+        ).fillna(0.0)
 
     combined["bvp_hr_shrunk"] = (
         combined["bvp_hr"] + BVP_PRIOR_PA * BVP_PRIOR_HR_RATE
