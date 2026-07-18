@@ -42,7 +42,7 @@ def train_home_run_model(frame:pd.DataFrame,tree_weight=.35,test_fraction=.15,ca
     pt=np.clip((1-tree_weight)*lg.predict_proba(te[HR_FEATURES])[:,1]+tree_weight*trm.predict_proba(te[HR_FEATURES])[:,1],1e-5,1-1e-5)
     pt=np.clip(cal.predict_proba(np.log(pt/(1-pt)).reshape(-1,1))[:,1],.002,.65);y=te.target_hr.to_numpy(int);q=float(np.quantile(pt,.9))
     m={"model_version":"stage4-home-run-probability","train_rows":len(tr),"calibration_rows":len(ca),"test_rows":len(te),"test_start_date":str(pd.Timestamp(te.game_date.min()).date()),"test_end_date":str(pd.Timestamp(te.game_date.max()).date()),"event_rate":float(y.mean()),"prediction_mean":float(pt.mean()),"brier_score":float(brier_score_loss(y,pt)),"log_loss":float(log_loss(y,pt,labels=[0,1])),"roc_auc":float(roc_auc_score(y,pt)) if len(np.unique(y))>1 else math.nan,"average_precision":float(average_precision_score(y,pt)),"top_decile_cutoff":q,"top_decile_hr_rate":float(y[pt>=q].mean()),"feature_count":len(HR_FEATURES),"bvp_prior_pa":40}
-    fit=o.iloc[:t];lg.fit(fit[HR_FEATURES],fit.target_hr);trm.fit(fit[HR_FEATURES],fit.target_hr)
+    lg.fit(o[HR_FEATURES],o.target_hr);trm.fit(o[HR_FEATURES],o.target_hr)
     return HomeRunModel(lg,trm,cal,tree_weight,m)
 
 def score_home_runs(frame,model,odds=None,minimum_edge=.04,minimum_ev=.04,watch_probability=.16):
