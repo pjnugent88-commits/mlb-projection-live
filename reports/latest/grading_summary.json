@@ -1,0 +1,116 @@
+{
+  "date": "2026-07-18",
+  "generated_at_utc": "2026-07-19T16:39:57.303763+00:00",
+  "projection_run_id": 29663667179,
+  "game_model": {
+    "graded_games": 12,
+    "winner_correct": 11,
+    "winner_incorrect": 1,
+    "winner_accuracy": 0.9166666666666666,
+    "brier_score": 0.22623108926164145,
+    "log_loss": 0.6453287999389938,
+    "home_runs_mae": 2.3449550596567024,
+    "away_runs_mae": 2.410276422386094,
+    "total_runs_mae": 2.7204408585083937,
+    "value_bets": 9,
+    "value_wins": 4,
+    "value_losses": 5,
+    "profit_units": 1.4899999999999993,
+    "roi": 0.16555555555555548
+  },
+  "player_props": {
+    "published_rows": 213,
+    "graded_rows": 213,
+    "void_rows": 0,
+    "projection_mae": 0.9161970310816022,
+    "value": {
+      "picks": 41,
+      "wins": 16,
+      "losses": 25,
+      "pushes": 0,
+      "hit_rate": 0.3902439024390244,
+      "profit_units": -10.291283864292561,
+      "roi": -0.25100692351933074
+    },
+    "by_market": {
+      "batter_hits": {
+        "graded_rows": 63,
+        "projection_mae": 0.6458627678880124,
+        "value": {
+          "picks": 24,
+          "wins": 10,
+          "losses": 14,
+          "pushes": 0,
+          "hit_rate": 0.4166666666666667,
+          "profit_units": -4.0672739068586905,
+          "roi": -0.1694697461191121
+        }
+      },
+      "batter_home_runs": {
+        "graded_rows": 63,
+        "projection_mae": 0.2084710336870817,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "batter_total_bases": {
+        "graded_rows": 63,
+        "projection_mae": 1.286389082590681,
+        "value": {
+          "picks": 12,
+          "wins": 4,
+          "losses": 8,
+          "pushes": 0,
+          "hit_rate": 0.3333333333333333,
+          "profit_units": -4.966798418972332,
+          "roi": -0.41389986824769437
+        }
+      },
+      "pitcher_hits_allowed": {
+        "graded_rows": 8,
+        "projection_mae": 2.2586540115206932,
+        "value": {
+          "picks": 2,
+          "wins": 1,
+          "losses": 1,
+          "pushes": 0,
+          "hit_rate": 0.5,
+          "profit_units": -0.038461538461538436,
+          "roi": -0.019230769230769218
+        }
+      },
+      "pitcher_outs": {
+        "graded_rows": 8,
+        "projection_mae": 3.7344367233666516,
+        "value": {
+          "picks": 1,
+          "wins": 0,
+          "losses": 1,
+          "pushes": 0,
+          "hit_rate": 0.0,
+          "profit_units": -1.0,
+          "roi": -1.0
+        }
+      },
+      "pitcher_strikeouts": {
+        "graded_rows": 8,
+        "projection_mae": 1.5424625048548335,
+        "value": {
+          "picks": 2,
+          "wins": 1,
+          "losses": 1,
+          "pushes": 0,
+          "hit_rate": 0.5,
+          "profit_units": -0.21875,
+          "roi": -0.109375
+        }
+      }
+    }
+  }
+}
