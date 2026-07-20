@@ -1,3 +1,3 @@
 /home/runner/work/mlb-projection-live/mlb-projection-live/src/mlb_projection/home_run_bvp.py:138: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
   combined = pd.concat([valid, invalid], ignore_index=True, sort=False)
-Published 189 standalone home-run probabilities with 0 matched sportsbook prices.
+Published 126 standalone home-run probabilities with 0 matched sportsbook prices.
