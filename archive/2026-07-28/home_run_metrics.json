@@ -16,12 +16,12 @@
   "feature_count": 37,
   "bvp_prior_pa": 40,
   "projection_date": "2026-07-28",
-  "generated_at_utc": "2026-07-28T17:02:11.377079+00:00",
-  "projected_hitters": 18,
-  "dashboard_hitters": 18,
+  "generated_at_utc": "2026-07-28T20:44:06.176257+00:00",
+  "projected_hitters": 126,
+  "dashboard_hitters": 120,
   "hr_values": 0,
-  "hr_watches": 3,
-  "confirmed_lineup_games": 1,
+  "hr_watches": 19,
+  "confirmed_lineup_games": 9,
   "market_odds_available": false,
   "matched_hr_prices": 0
 }
