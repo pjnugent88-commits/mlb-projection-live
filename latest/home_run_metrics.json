@@ -6,7 +6,7 @@
   "test_start_date": "2026-07-18",
   "test_end_date": "2026-07-31",
   "event_rate": 0.10692030173827484,
-  "prediction_mean": 0.1294631860130882,
+  "prediction_mean": 0.12946318601308823,
   "brier_score": 0.09398734265657839,
   "log_loss": 0.3322684736256833,
   "roc_auc": 0.638340967310955,
@@ -16,12 +16,12 @@
   "feature_count": 37,
   "bvp_prior_pa": 40,
   "projection_date": "2026-08-01",
-  "generated_at_utc": "2026-08-01T20:20:39.818394+00:00",
-  "projected_hitters": 117,
-  "dashboard_hitters": 117,
+  "generated_at_utc": "2026-08-01T23:25:20.970277+00:00",
+  "projected_hitters": 90,
+  "dashboard_hitters": 90,
   "hr_values": 0,
-  "hr_watches": 0,
-  "confirmed_lineup_games": 7,
+  "hr_watches": 3,
+  "confirmed_lineup_games": 5,
   "market_odds_available": true,
-  "matched_hr_prices": 101
+  "matched_hr_prices": 67
 }
