@@ -2,7 +2,7 @@
   "production_mode": true,
   "synthetic_data_used": false,
   "projection_date": "2026-08-11",
-  "generated_at_utc": "2026-08-11T14:54:35.852205+00:00",
+  "generated_at_utc": "2026-08-11T16:51:52.782973+00:00",
   "model_scope": "Probability a confirmed starting batter hits at least one home run in the game.",
   "data_sources": {
     "schedule_and_lineups": "MLB Stats API schedule and boxscore",
