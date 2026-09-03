@@ -1,0 +1,116 @@
+{
+  "date": "2026-09-02",
+  "generated_at_utc": "2026-09-03T17:22:56.081036+00:00",
+  "projection_run_id": 33690309193,
+  "game_model": {
+    "graded_games": 11,
+    "winner_correct": 4,
+    "winner_incorrect": 7,
+    "winner_accuracy": 0.36363636363636365,
+    "brier_score": 0.2921177067953203,
+    "log_loss": 0.7795569633833055,
+    "home_runs_mae": 1.4868386807754839,
+    "away_runs_mae": 3.8109588970358317,
+    "total_runs_mae": 3.6708647800363057,
+    "value_bets": 9,
+    "value_wins": 3,
+    "value_losses": 6,
+    "profit_units": 4.34,
+    "roi": 0.4822222222222222
+  },
+  "player_props": {
+    "published_rows": 456,
+    "graded_rows": 453,
+    "void_rows": 3,
+    "projection_mae": 0.9077021520006915,
+    "value": {
+      "picks": 0,
+      "wins": 0,
+      "losses": 0,
+      "pushes": 0,
+      "hit_rate": null,
+      "profit_units": null,
+      "roi": null
+    },
+    "by_market": {
+      "batter_hits": {
+        "graded_rows": 134,
+        "projection_mae": 0.6710459364719884,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "batter_home_runs": {
+        "graded_rows": 134,
+        "projection_mae": 0.19723282582215151,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "batter_total_bases": {
+        "graded_rows": 134,
+        "projection_mae": 1.3100609025629686,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "pitcher_hits_allowed": {
+        "graded_rows": 17,
+        "projection_mae": 1.867290461835527,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "pitcher_outs": {
+        "graded_rows": 17,
+        "projection_mae": 3.471265112385398,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      },
+      "pitcher_strikeouts": {
+        "graded_rows": 17,
+        "projection_mae": 1.678595000217942,
+        "value": {
+          "picks": 0,
+          "wins": 0,
+          "losses": 0,
+          "pushes": 0,
+          "hit_rate": null,
+          "profit_units": null,
+          "roi": null
+        }
+      }
+    }
+  }
+}
